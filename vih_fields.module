@@ -1,0 +1,107 @@
+<?php
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ * Adds formatter to render CPR-numbers
+ */
+function vih_fields_field_formatter_info() {
+  return array(
+    'vih_cpr_formatter' => array(
+      'label' => t('CPR Number'),
+      'field types' => array('text'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function vih_fields_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  foreach ($items as $delta => $item) {
+    $element[$delta]['#markup'] = _vih_fields_cpr_render($item['safe_value']);
+  }
+
+  return $element;
+}
+
+/**
+ * Handle CPR number
+ *
+ * @param string $cpr
+ *
+ * @return string
+ */
+function _vih_fields_cpr_render($cpr) {
+  global $user;
+  if (in_array('office', $user->roles)) {
+    return $cpr;
+  }
+  return round(vih_calculate_age(vih_get_birthday($cpr)), 0) . ' år';
+}
+
+/**
+ * Gets a persons birthday based on the SSN number
+ *
+ * @param string $cpr Danish Social Security Number (CPR)
+ *
+ * @return ISO date
+ */
+function vih_get_birthday($cpr)
+{
+  $month = substr($cpr, 2, 2);
+  $day = substr($cpr, 0, 2);
+  $year_last_two_digits = substr($cpr, 4, 2); // two last in the year is taken from the ssn-number
+  $testyear = (substr(date('Y'), 0, 2) - 1) . $year_last_two_digits; // withdraws one from actual year
+  if ($testyear < date('Y') AND (date('Y') - $testyear) < 100) {
+    $year = (substr(date('Y'), 0, 2) - 1) . $year_last_two_digits;
+  }
+  else {
+    $year = substr(date('Y'), 0, 2) . $year_last_two_digits;
+  }
+  return $year . '-' . $month . '-' . $day;
+}
+
+/**
+ * Calculates age on a certain date
+ *
+ * @param date $birthday ISO-format
+ * @param date $date ISO-format
+ *
+ * @return integer
+ */
+function vih_calculate_age($birthday, $date)
+{
+  $tmp = explode('-',$birthday);
+  if (empty($tmp[0]) OR empty($tmp[1]) OR empty($tmp[2]) or !is_numeric($tmp[1])) {
+    return;
+  }
+
+  $birthday = mktime(0, 0, 0, $tmp[0], $tmp[1], $tmp[2]);
+
+  $dato = $tmp[2];
+  $maaned = $tmp[1];
+  $aar = $tmp[0];
+
+  if (!empty($date)) {
+    $tmp = explode('-',$date);
+    $date = mktime(0,0,0,$tmp[0],$tmp[1],$tmp[2]);
+
+    $days = $tmp[2] - $dato ;
+    $months = ( $tmp[1] - $maaned ) * 30 ;
+    $years = ( $tmp[0] - $aar ) * 365 ;
+  } 
+  else {
+    $days = date('d') - $dato ;
+    $months = (date('m') - $maaned) * 30 ;
+    $years = (date('Y') - $aar) * 365 ;
+  }
+
+  $total = ($days + $months + $years) / 365 ;
+
+  return $total;
+}
