@@ -41,7 +41,7 @@ function _vih_fields_cpr_render($cpr) {
   if (in_array('office', $user->roles)) {
     return $cpr;
   }
-  return round(vih_calculate_age(vih_get_birthday($cpr)), 0) . ' år';
+  return round(vih_calculate_age(vih_get_birthday($cpr)), 0) . ' ' . t('år');
 }
 
 /**
@@ -51,8 +51,7 @@ function _vih_fields_cpr_render($cpr) {
  *
  * @return ISO date
  */
-function vih_get_birthday($cpr)
-{
+function vih_get_birthday($cpr) {
   $month = substr($cpr, 2, 2);
   $day = substr($cpr, 0, 2);
   $year_last_two_digits = substr($cpr, 4, 2); // two last in the year is taken from the ssn-number
@@ -74,8 +73,7 @@ function vih_get_birthday($cpr)
  *
  * @return integer
  */
-function vih_calculate_age($birthday, $date)
-{
+function vih_calculate_age($birthday, $date = NULL) {
   $tmp = explode('-',$birthday);
   if (empty($tmp[0]) OR empty($tmp[1]) OR empty($tmp[2]) or !is_numeric($tmp[1])) {
     return;
@@ -94,7 +92,7 @@ function vih_calculate_age($birthday, $date)
     $days = $tmp[2] - $dato ;
     $months = ( $tmp[1] - $maaned ) * 30 ;
     $years = ( $tmp[0] - $aar ) * 365 ;
-  } 
+  }
   else {
     $days = date('d') - $dato ;
     $months = (date('m') - $maaned) * 30 ;
